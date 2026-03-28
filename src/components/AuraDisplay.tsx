@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { AuraDefinition } from '../types'
 import { AuraEffect } from './AuraEffect'
 import { CutsceneOverlay } from './CutsceneOverlay'
+import { getAuraCategory, CATEGORY_COLORS } from '../utils/roll'
 
 interface Props {
   aura: AuraDefinition | null
@@ -73,12 +74,17 @@ export function AuraDisplay({ aura, onDismiss }: Props) {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <p
-              className="text-xs font-bold uppercase tracking-widest mb-1"
-              style={{ color: aura.color }}
-            >
-              1-in-{aura.chance.toLocaleString()}
-            </p>
+            {(() => {
+              const category = getAuraCategory(aura.chance)
+              return (
+                <p
+                  className="text-xs font-bold uppercase tracking-widest mb-1"
+                  style={{ color: CATEGORY_COLORS[category] }}
+                >
+                  {category} · 1-in-{aura.chance.toLocaleString()}
+                </p>
+              )
+            })()}
             <h2 className="text-3xl font-bold text-white mb-1">{aura.name}</h2>
             <p className="text-gray-300 text-sm mb-3">{aura.description}</p>
             <p className="text-lg font-semibold" style={{ color: aura.color }}>

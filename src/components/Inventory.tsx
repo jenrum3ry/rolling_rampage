@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { GameState } from '../types'
 import { AURA_MAP, AURAS_DESC } from '../data/auras'
+import { getAuraCategory, CATEGORY_COLORS } from '../utils/roll'
 
 interface Props {
   state: GameState
@@ -73,6 +74,12 @@ export function Inventory({ state }: Props) {
                 style={{ color: aura.color }}
               >
                 {aura.name}
+              </p>
+              <p
+                className="text-xs font-semibold"
+                style={{ color: CATEGORY_COLORS[getAuraCategory(aura.chance)] }}
+              >
+                {getAuraCategory(aura.chance)}
               </p>
               <p className="text-gray-500 text-xs">1-in-{formatStat(aura.chance)}</p>
               {count > 1 && (

@@ -71,6 +71,31 @@ export function simulateRolls(
 }
 
 /**
+ * Derive the category/tier name for an aura based on its chance value.
+ */
+export function getAuraCategory(chance: number): string {
+  if (chance >= 1_000_000) return 'Phantom'
+  if (chance >= 600_000)   return 'Divine'
+  if (chance >= 200_000)   return 'Mythic'
+  if (chance >= 50_000)    return 'Legendary'
+  if (chance >= 10_000)    return 'Epic'
+  if (chance >= 1_000)     return 'Rare'
+  if (chance >= 100)       return 'Uncommon'
+  return 'Common'
+}
+
+export const CATEGORY_COLORS: Record<string, string> = {
+  Common:    '#9ca3af',
+  Uncommon:  '#4ade80',
+  Rare:      '#38bdf8',
+  Epic:      '#c084fc',
+  Legendary: '#fbbf24',
+  Mythic:    '#e879f9',
+  Divine:    '#f9a8d4',
+  Phantom:   '#67e8f9',
+}
+
+/**
  * Decrement active potions' rollsRemaining by 1. Remove depleted ones.
  */
 export function consumePotionRoll(

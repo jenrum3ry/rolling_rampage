@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { AURAS_DESC } from '../data/auras'
 import type { GameState } from '../types'
+import { getAuraCategory, CATEGORY_COLORS } from '../utils/roll'
 
 interface Props {
   state: GameState
@@ -102,6 +103,14 @@ export function AuraIndex({ state }: Props) {
               >
                 {isDiscovered ? aura.name : '???'}
               </p>
+              {isDiscovered && (
+                <p
+                  className="text-xs font-semibold"
+                  style={{ color: CATEGORY_COLORS[getAuraCategory(aura.chance)] }}
+                >
+                  {getAuraCategory(aura.chance)}
+                </p>
+              )}
               <p className="text-gray-500 text-xs mt-0.5">
                 {isDiscovered ? `1-in-${formatChance(aura.chance)}` : '1-in-???'}
               </p>
