@@ -5,27 +5,52 @@ export const GAUNTLETS: GauntletDef[] = [
     id: 'gauntlet-of-sparks',
     name: 'Gauntlet of Sparks',
     requiredAuras: [
-      { tier: 'Common', count: 10 },
-      { tier: 'Uncommon', count: 5 },
+      { auraId: 'ordinary', count: 10 },
+      { auraId: 'surge', count: 5 },
     ],
-    rewardDescription: '5× luck boost for 10 rolls',
+    reward: {
+      luckBonus: 0,
+      speedBonus: 10,
+      description: '+10% roll speed (while equipped)',
+    },
   },
   {
     id: 'gauntlet-of-storms',
     name: 'Gauntlet of Storms',
     requiredAuras: [
-      { tier: 'Rare', count: 5 },
-      { tier: 'Epic', count: 2 },
+      { auraId: 'ice', count: 5 },
+      { auraId: 'neon', count: 2 },
     ],
-    rewardDescription: '50× luck boost for 10 rolls + rolling speed +25%',
+    reward: {
+      luckBonus: 50,
+      speedBonus: 0,
+      description: '+50% luck (while equipped)',
+    },
   },
   {
     id: 'gauntlet-of-the-abyss',
     name: 'Gauntlet of the Abyss',
     requiredAuras: [
-      { tier: 'Legendary', count: 3 },
-      { tier: 'Mythic', count: 1 },
+      { auraId: 'helix', count: 3 },
+      { auraId: 'sky', count: 1 },
     ],
-    rewardDescription: '10,000× luck boost for 5 rolls + rolling speed +100%',
+    reward: {
+      luckBonus: 100,
+      speedBonus: 25,
+      description: '+100% luck + 25% roll speed (while equipped)',
+    },
+  },
+  {
+    id: 'gauntlet-of-hellfire',
+    name: 'Gauntlet of Hellfire',
+    requiredAuras: [
+      { auraId: 'scorched', count: 3 },
+      { auraId: 'nova', count: 1 },
+    ],
+    reward: {
+      luckBonus: 200,
+      speedBonus: 0,
+      description: '+200% luck (while equipped)',
+    },
   },
 ]

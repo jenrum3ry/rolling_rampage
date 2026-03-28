@@ -1,63 +1,82 @@
-import type { AuraDefinition, GameState, Rarity } from '../types'
-import { AURAS_BY_TIER } from '../data/auras'
-import { RARITIES_DESC } from '../data/rarities'
+import type { AuraDefinition, GameState } from '../types'
+import { AURAS_DESC } from '../data/auras'
+import { GAUNTLETS } from '../data/gauntlets'
 
 /**
- * Compute the effective luck multiplier for the current state.
- * Combines the base permanent multiplier with all active potions.
+ * Compute effective luck multiplier.
+ * Combines base luck, active potions, and equipped gauntlet bonuses.
  */
 export function getEffectiveLuck(state: GameState): number {
-  return state.activePotions.reduce(
-    (acc, potion) => acc * potion.luckMultiplier,
-    state.luckMultiplier
-  )
+  // Active potion luck (multiplicative)
+  const potionLuck = state.activePotions
+    .filter((p) => p.type === 'luck')
+    .reduce((acc, p) => acc * p.luckMultiplier, state.luckMultiplier)
+
+  // Equipped gauntlet luck bonus (additive percentages → multiplicative)
+  const equippedLuckBonus = state.equippedGauntlets.reduce((acc, gId) => {
+    const g = GAUNTLETS.find((g) => g.id === gId)
+    return acc + (g?.reward.luckBonus ?? 0)
+  }, 0)
+
+  return potionLuck * (1 + equippedLuckBonus / 100)
 }
 
 /**
- * Pick a random aura from the given tier's pool.
+ * Get effective roll speed multiplier from equipped gauntlets.
+ * Returns a number > 1 meaning intervals are divided by this.
  */
-function pickFromTier(tier: string): AuraDefinition {
-  const pool = AURAS_BY_TIER[tier] ?? []
-  if (pool.length === 0) throw new Error(`No auras defined for tier: ${tier}`)
-  return pool[Math.floor(Math.random() * pool.length)]
+export function getEffectiveSpeedMultiplier(state: GameState): number {
+  const bonus = state.equippedGauntlets.reduce((acc, gId) => {
+    const g = GAUNTLETS.find((g) => g.id === gId)
+    return acc + (g?.reward.speedBonus ?? 0)
+  }, 0)
+  return 1 + bonus / 100
 }
 
 /**
- * Roll for an aura given an effective luck multiplier.
+ * Roll a single aura given an effective luck multiplier.
  *
- * Algorithm:
- *   Iterate rarities from rarest → most common.
- *   For each tier T with 1-in-N chance:
- *     probability = min(1, effectiveLuck / N)
- *     if random() < probability → award this tier
- *   Common is always the final fallback.
+ * Algorithm: iterate rarities from rarest → most common.
+ * For each aura with 1-in-N chance:
+ *   probability = min(1, effectiveLuck / N)
+ * First aura whose probability check passes is awarded.
  */
 export function rollAura(effectiveLuck: number): AuraDefinition {
-  for (const rarity of RARITIES_DESC) {
-    const probability = Math.min(1, effectiveLuck / rarity.chance)
+  for (const aura of AURAS_DESC) {
+    const probability = Math.min(1, effectiveLuck / aura.chance)
     if (Math.random() < probability) {
-      return pickFromTier(rarity.tier)
+      return aura
     }
   }
-  // Should never reach here since Common probability approaches 1,
-  // but fall back to Common just in case.
-  return pickFromTier('Common')
+  // Fallback to most common aura (floating point safety)
+  return AURAS_DESC[AURAS_DESC.length - 1]
 }
 
 /**
- * Decrement rolls remaining on active potions and remove depleted ones.
- * Returns the updated potions array.
+ * Simulate N rolls and return the top K rarest results.
+ * Used by Portal Potion and Supersonic Potion.
  */
-export function consumePotionRoll(state: GameState): GameState['activePotions'] {
+export function simulateRolls(
+  count: number,
+  effectiveLuck: number,
+  topK = 10
+): AuraDefinition[] {
+  const results: AuraDefinition[] = []
+  for (let i = 0; i < count; i++) {
+    results.push(rollAura(effectiveLuck))
+  }
+  // Sort rarest first (highest chance = most common, so sort descending)
+  results.sort((a, b) => b.chance - a.chance)
+  return results.slice(0, topK)
+}
+
+/**
+ * Decrement active potions' rollsRemaining by 1. Remove depleted ones.
+ */
+export function consumePotionRoll(
+  state: GameState
+): GameState['activePotions'] {
   return state.activePotions
     .map((p) => ({ ...p, rollsRemaining: p.rollsRemaining - 1 }))
     .filter((p) => p.rollsRemaining > 0)
-}
-
-/**
- * Get the stat bonus for a given rarity.
- * stat bonus = rarity.chance (1-in-2 = +2, 1-in-1M = +1,000,000)
- */
-export function getStatBonus(rarity: Rarity): number {
-  return rarity.chance
 }
