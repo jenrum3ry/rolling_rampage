@@ -37,7 +37,6 @@ function Game({ username }: { username: string }) {
   const { logout } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('inventory')
   const [displayKey, setDisplayKey] = useState(0)
-  const [cutscenePlaying, setCutscenePlaying] = useState(false)
 
   const effectiveLuck = getEffectiveLuck(state)
   const inventoryCounts = getInventoryCounts()
@@ -45,16 +44,12 @@ function Game({ username }: { username: string }) {
   const handleRoll = useCallback(() => {
     roll()
     setDisplayKey((k) => k + 1)
-    // Check if result might be high-rarity — pause auto-roll during cutscene
-    setCutscenePlaying(true)
   }, [roll])
 
-  const handleDismiss = useCallback(() => {
-    setCutscenePlaying(false)
-  }, [])
+  const handleDismiss = useCallback(() => {}, [])
 
-  // Auto-roll (paused during cutscenes)
-  useAutoRoll(state, quickRoll, cutscenePlaying)
+  // Auto-roll runs independently of manual roll overlays
+  useAutoRoll(state, quickRoll, false)
 
   const lastAuraDef = state.lastRolledAura
     ? AURA_MAP[state.lastRolledAura.definitionId]
