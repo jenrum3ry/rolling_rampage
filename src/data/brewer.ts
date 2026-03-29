@@ -1,5 +1,5 @@
 import type { Potion } from '../types'
-import { LOVE_POTION, STARLIGHT_POTION, ACCELERATION_POTION } from './potions'
+import { LOVE_POTION, STARLIGHT_POTION, ACCELERATION_POTION, ELIXIR_OF_INSANITY, ELIXIR_OF_SONARIA } from './potions'
 
 export interface BrewRecipe {
   id: string
@@ -39,5 +39,26 @@ export const BREW_RECIPES: BrewRecipe[] = [
       { auraId: 'scorched', count: 2 },
     ],
     resultPotion: ACCELERATION_POTION,
+  },
+  {
+    id: 'brew-elixir-of-insanity',
+    name: 'Elixir of Insanity',
+    description: 'Simulate 30,000 instant rolls, keeping the 10 rarest.',
+    ingredients: [
+      { auraId: 'nova',   count: 2 },
+      { auraId: 'vortex', count: 2 },
+    ],
+    resultPotion: ELIXIR_OF_INSANITY,
+  },
+  {
+    id: 'brew-elixir-of-sonaria',
+    name: 'Elixir of Sonaria',
+    description: 'Grants 1,000,000× luck for 1 roll.',
+    ingredients: [
+      { auraId: 'odd',        count: 1 },
+      { auraId: 'reign',      count: 1 },
+      { auraId: 'primordial', count: 1 },
+    ],
+    resultPotion: ELIXIR_OF_SONARIA,
   },
 ]

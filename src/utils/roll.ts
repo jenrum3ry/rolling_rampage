@@ -4,7 +4,7 @@ import { GAUNTLETS } from '../data/gauntlets'
 
 /**
  * Compute effective luck multiplier.
- * Combines base luck, active potions, and equipped gauntlet bonuses.
+ * Combines base luck, active potions, equipped gauntlet bonuses, and active blessing.
  */
 export function getEffectiveLuck(state: GameState): number {
   // Active potion luck (multiplicative)
@@ -18,7 +18,11 @@ export function getEffectiveLuck(state: GameState): number {
     return acc + (g?.reward.luckBonus ?? 0)
   }, 0)
 
-  return potionLuck * (1 + equippedLuckBonus / 100)
+  // Blessing: +100% luck (2× multiplier) while active
+  const blessingMult =
+    state.blessingEndTime && state.blessingEndTime > Date.now() ? 2 : 1
+
+  return potionLuck * (1 + equippedLuckBonus / 100) * blessingMult
 }
 
 /**
@@ -42,15 +46,20 @@ export function getEffectiveSpeedMultiplier(state: GameState): number {
 
 /**
  * Roll a single aura given an effective luck multiplier.
+ * Optional biomeOverrides map replaces per-aura chances during an active biome.
  *
  * Algorithm: iterate rarities from rarest → most common.
  * For each aura with 1-in-N chance:
  *   probability = min(1, effectiveLuck / N)
  * First aura whose probability check passes is awarded.
  */
-export function rollAura(effectiveLuck: number): AuraDefinition {
+export function rollAura(
+  effectiveLuck: number,
+  biomeOverrides?: Record<string, number>
+): AuraDefinition {
   for (const aura of AURAS_DESC) {
-    const probability = Math.min(1, effectiveLuck / aura.chance)
+    const effectiveChance = biomeOverrides?.[aura.id] ?? aura.chance
+    const probability = Math.min(1, effectiveLuck / effectiveChance)
     if (Math.random() < probability) {
       return aura
     }
@@ -79,19 +88,20 @@ export function simulateRolls(
 
 /**
  * Derive the category/tier name for an aura based on its chance value.
+ * Updated tiers: Extreme (100k+) replaces Celestial; Phantom (1M+) replaces Charming.
  */
 export function getAuraCategory(chance: number): string {
   if (chance >= 1_000_000_000_000) return 'Special'
   if (chance >= 1_000_000_000)     return 'Ethereum'
   if (chance >= 100_000_000)       return 'Rune'
   if (chance >= 10_000_000)        return 'Exalted'
-  if (chance >= 1_000_000)         return 'Charming'
-  if (chance >= 250_000)           return 'Celestial'
-  if (chance >= 10_000)            return 'Divine'
-  if (chance >= 5_000)             return 'Exotic'
+  if (chance >= 1_000_000)         return 'Phantom'
+  if (chance >= 100_000)           return 'Extreme'
+  if (chance >= 50_000)            return 'Divine'
+  if (chance >= 10_000)            return 'Exotic'
   if (chance >= 1_000)             return 'Mythic'
-  if (chance >= 500)               return 'Legendary'
-  if (chance >= 100)               return 'Epic'
+  if (chance >= 100)               return 'Legendary'
+  if (chance >= 50)                return 'Epic'
   if (chance >= 10)                return 'Rare'
   if (chance >= 5)                 return 'Uncommon'
   return 'Common'
@@ -106,8 +116,8 @@ export const CATEGORY_COLORS: Record<string, string> = {
   Mythic:    '#dc2626',
   Exotic:    '#0891b2',
   Divine:    '#c026d3',
-  Celestial: '#f59e0b',
-  Charming:  '#38bdf8',
+  Extreme:   '#f59e0b',
+  Phantom:   '#38bdf8',
   Exalted:   '#e879f9',
   Rune:      '#f97316',
   Ethereum:  '#67e8f9',

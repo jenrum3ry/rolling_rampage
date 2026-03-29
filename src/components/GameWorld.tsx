@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { GameState, AuraDefinition, OwnedAura } from '../types'
 import { AURA_MAP } from '../data/auras'
+import { BIOME_DISPLAY_NAMES, BIOME_COLORS } from '../data/biomes'
 import { getAuraCategory, CATEGORY_COLORS } from '../utils/roll'
 import { PlayerCharacter } from './PlayerCharacter'
 import { usePlayerMovement } from '../hooks/usePlayerMovement'
@@ -167,15 +168,29 @@ export function GameWorld({
           </div>
         </div>
 
-        {/* HUD — top right: luck */}
-        {effectiveLuck > 1 && (
-          <div
-            className="absolute top-3 right-3 px-2 py-1 rounded-lg text-xs font-bold text-yellow-300"
-            style={{ background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(251,191,36,0.4)' }}
-          >
-            {formatLuck(effectiveLuck)} luck
-          </div>
-        )}
+        {/* HUD — top right: luck + active biome */}
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+          {effectiveLuck > 1 && (
+            <div
+              className="px-2 py-1 rounded-lg text-xs font-bold text-yellow-300"
+              style={{ background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(251,191,36,0.4)' }}
+            >
+              {formatLuck(effectiveLuck)} luck
+            </div>
+          )}
+          {state.activeBiome && (
+            <div
+              className="px-2 py-1 rounded-lg text-xs font-bold"
+              style={{
+                background: 'rgba(0,0,0,0.65)',
+                border: `1px solid ${BIOME_COLORS[state.activeBiome]}66`,
+                color: BIOME_COLORS[state.activeBiome],
+              }}
+            >
+              {BIOME_DISPLAY_NAMES[state.activeBiome]}
+            </div>
+          )}
+        </div>
 
         {/* Roll button — bottom center */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3">

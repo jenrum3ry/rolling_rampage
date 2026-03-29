@@ -3,6 +3,7 @@ import { useGameState } from './hooks/useGameState'
 import { useAuth } from './hooks/useAuth'
 import { useAutoRoll } from './hooks/useAutoRoll'
 import { useFrostbiteTimer } from './hooks/useFrostbiteTimer'
+import { useBiomeTimer } from './hooks/useBiomeTimer'
 import { LoginScreen } from './components/LoginScreen'
 import { TutorialModal } from './components/TutorialModal'
 import { AuraDisplay } from './components/AuraDisplay'
@@ -13,12 +14,13 @@ import { GauntletPanel } from './components/GauntletPanel'
 import { AuraIndex } from './components/AuraIndex'
 import { AutoRollPanel } from './components/AutoRollPanel'
 import { BrewerPanel } from './components/BrewerPanel'
+import { BlessingAltar } from './components/BlessingAltar'
 import { GameWorld } from './components/GameWorld'
 import { getEffectiveLuck } from './utils/roll'
 import { AURA_MAP } from './data/auras'
 import { GAUNTLETS } from './data/gauntlets'
 
-type Tab = 'inventory' | 'potions' | 'gauntlets' | 'index' | 'auto-roll' | 'brewer'
+type Tab = 'inventory' | 'potions' | 'gauntlets' | 'index' | 'auto-roll' | 'brewer' | 'blessing'
 
 function Game({ username }: { username: string }) {
   const {
@@ -34,6 +36,9 @@ function Game({ username }: { username: string }) {
     unequipAura,
     addBonusAura,
     dismissRareNotification,
+    activateBiome,
+    deactivateBiome,
+    attemptBlessing,
     setAutoRollEnabled,
     setAutoRollSpeed,
     resetGame,
@@ -41,8 +46,6 @@ function Game({ username }: { username: string }) {
     canCraftGauntlet,
     brewPotion,
   } = useGameState(username)
-
-  useFrostbiteTimer(addBonusAura)
 
   const { logout } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('inventory')
@@ -61,6 +64,12 @@ function Game({ username }: { username: string }) {
   // Auto-roll runs independently of manual roll overlays
   useAutoRoll(state, quickRoll, false)
 
+  // Frostbite: 10-min timer with 1/50 chance to award Frostbite aura
+  useFrostbiteTimer(addBonusAura)
+
+  // Biome: 1-sec timer for Starlight trigger, biome expiry, Gravitas passive
+  useBiomeTimer(state, activateBiome, deactivateBiome, addBonusAura)
+
   const lastAuraDef = state.lastRolledAura
     ? AURA_MAP[state.lastRolledAura.definitionId]
     : null
@@ -72,6 +81,7 @@ function Game({ username }: { username: string }) {
     { id: 'brewer', label: '⚗ Brewer' },
     { id: 'index', label: 'Aura Index', badge: state.discoveredAuras.length || undefined },
     { id: 'auto-roll', label: 'Auto Roll' },
+    { id: 'blessing', label: '✦ Blessing' },
   ]
 
   return (
@@ -195,6 +205,9 @@ function Game({ username }: { username: string }) {
               onToggle={setAutoRollEnabled}
               onSpeedChange={setAutoRollSpeed}
             />
+          )}
+          {activeTab === 'blessing' && (
+            <BlessingAltar state={state} onAttempt={attemptBlessing} />
           )}
         </div>
       </main>

@@ -16,6 +16,8 @@ export interface OwnedAura {
 
 export type AutoRollSpeed = 'slow' | 'normal' | 'fast' | 'very-fast' | 'ultra'
 
+export type BiomeName = 'starlight' | 'midnight'
+
 export interface BonusAuraChance {
   auraId: string
   chance: number
@@ -27,7 +29,7 @@ export interface Potion {
   description: string
   luckMultiplier: number
   rollsRemaining: number
-  type: 'luck' | 'portal' | 'supersonic' | 'speed' | 'techno'
+  type: 'luck' | 'portal' | 'supersonic' | 'speed' | 'techno' | 'biome'
   simulatedRolls?: number
   speedMultiplier?: number
   durationMs?: number
@@ -69,4 +71,8 @@ export interface GameState {
   equippedAura: string | null
   activeSpeedPotions: ActiveSpeedPotion[]
   autoRollRareNotification: OwnedAura | null
+  activeBiome: BiomeName | null
+  biomeEndTime: number | null
+  blessingCooldownEndTime: number | null
+  blessingEndTime: number | null
 }

@@ -68,6 +68,46 @@ export const GAUNTLETS: GauntletDef[] = [
     },
   },
   {
+    id: 'gauntlet-of-unknown-wisdom',
+    name: 'Gauntlet of Unknown Wisdom',
+    requiredAuras: [
+      { auraId: 'voltage', count: 1 },
+      { auraId: 'scarlet', count: 1 },
+    ],
+    reward: {
+      luckBonus: 290,
+      speedBonus: 30,
+      description: '+290% luck + 30% roll speed (while equipped)',
+    },
+  },
+  {
+    id: 'gauntlet-of-absolute-zero',
+    name: 'Gauntlet of Absolute Zero',
+    requiredAuras: [
+      { auraId: 'tundra',  count: 1 },
+      { auraId: 'glacier', count: 1 },
+      { auraId: 'arctic',  count: 1 },
+    ],
+    reward: {
+      luckBonus: 300,
+      speedBonus: 50,
+      description: '+300% luck + 50% roll speed (while equipped)',
+    },
+  },
+  {
+    id: 'gauntlet-of-maternity',
+    name: 'Gauntlet of Maternity',
+    requiredAuras: [
+      { auraId: 'solstice', count: 1 },
+      { auraId: 'eternity', count: 1 },
+    ],
+    reward: {
+      luckBonus: 400,
+      speedBonus: 60,
+      description: '+400% luck + 60% roll speed (while equipped)',
+    },
+  },
+  {
     id: 'gauntlet-of-purity',
     name: 'Gauntlet of Purity',
     requiredAuras: [

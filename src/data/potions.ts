@@ -32,6 +32,25 @@ export const STARLIGHT_POTION: Potion = {
   type: 'luck',
 }
 
+export const ELIXIR_OF_INSANITY: Potion = {
+  id: 'elixir-of-insanity',
+  name: 'Elixir of Insanity',
+  description: 'Skips 30,000 rolls, keeping the 10 rarest auras obtained.',
+  luckMultiplier: 1,
+  rollsRemaining: 1,
+  type: 'supersonic',
+  simulatedRolls: 30_000,
+}
+
+export const ELIXIR_OF_SONARIA: Potion = {
+  id: 'elixir-of-sonaria',
+  name: 'Elixir of Sonaria',
+  description: 'Grants 1,000,000× luck for 1 roll.',
+  luckMultiplier: 1_000_000,
+  rollsRemaining: 1,
+  type: 'luck',
+}
+
 export const ACCELERATION_POTION: Potion = {
   id: 'acceleration-potion',
   name: 'Acceleration Potion',
@@ -111,6 +130,14 @@ export const ALL_POTIONS: Potion[] = [
     type: 'speed',
     speedMultiplier: 75,
     durationMs: 180_000,
+  },
+  {
+    id: 'biome-changing-potion',
+    name: 'Biome-Changing Potion',
+    description: 'Activates a random biome (Starlight or Midnight) for 5 minutes, boosting certain aura drop rates.',
+    luckMultiplier: 1,
+    rollsRemaining: 1,
+    type: 'biome',
   },
   {
     id: 'techno-potion',

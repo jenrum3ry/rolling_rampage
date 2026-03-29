@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { GameState, OwnedAura, AutoRollSpeed } from '../types'
+import type { GameState, OwnedAura, AutoRollSpeed, BiomeName } from '../types'
 import {
   rollAura,
   getEffectiveLuck,
@@ -10,6 +10,7 @@ import { BEGINNER_POTION } from '../data/potions'
 import { GAUNTLETS } from '../data/gauntlets'
 import { BREW_RECIPES } from '../data/brewer'
 import { AURA_MAP } from '../data/auras'
+import { BIOME_AURA_OVERRIDES } from '../data/biomes'
 import { saveStateKey } from './useAuth'
 
 function createInitialState(): GameState {
@@ -30,6 +31,10 @@ function createInitialState(): GameState {
     equippedAura: null,
     activeSpeedPotions: [],
     autoRollRareNotification: null,
+    activeBiome: null,
+    biomeEndTime: null,
+    blessingCooldownEndTime: null,
+    blessingEndTime: null,
   }
 }
 
@@ -49,6 +54,11 @@ function saveState(username: string, state: GameState): void {
   localStorage.setItem(saveStateKey(username), JSON.stringify(state))
 }
 
+function getActiveBiomeOverrides(state: GameState): Record<string, number> | undefined {
+  if (!state.activeBiome || !state.biomeEndTime || state.biomeEndTime <= Date.now()) return undefined
+  return BIOME_AURA_OVERRIDES[state.activeBiome]
+}
+
 export function useGameState(username: string) {
   const [state, setState] = useState<GameState>(() => loadState(username))
 
@@ -64,7 +74,8 @@ export function useGameState(username: string) {
   const roll = useCallback(() => {
     setState((prev) => {
       const effectiveLuck = getEffectiveLuck(prev)
-      const aura = rollAura(effectiveLuck)
+      const biomeOverrides = getActiveBiomeOverrides(prev)
+      const aura = rollAura(effectiveLuck, biomeOverrides)
       const statBonus = aura.chance
 
       const owned: OwnedAura = {
@@ -112,7 +123,8 @@ export function useGameState(username: string) {
   const quickRoll = useCallback(() => {
     setState((prev) => {
       const effectiveLuck = getEffectiveLuck(prev)
-      const aura = rollAura(effectiveLuck)
+      const biomeOverrides = getActiveBiomeOverrides(prev)
+      const aura = rollAura(effectiveLuck, biomeOverrides)
       const owned: OwnedAura = { definitionId: aura.id, rolledAt: Date.now() }
       const isRare = aura.chance >= 10_000
       const next: GameState = {
@@ -176,6 +188,19 @@ export function useGameState(username: string) {
               ...prev.activeSpeedPotions,
               { endTime, speedMultiplier: potion.speedMultiplier ?? 75 },
             ],
+          }
+          saveState(username, next)
+          return next
+        }
+
+        // Biome potion: activate a random biome for 5 minutes
+        if (potion.type === 'biome') {
+          const biome: BiomeName = Math.random() < 0.5 ? 'starlight' : 'midnight'
+          const next: GameState = {
+            ...prev,
+            potionInventory: prev.potionInventory.filter((p) => p.id !== potionId),
+            activeBiome: biome,
+            biomeEndTime: Date.now() + 5 * 60_000,
           }
           saveState(username, next)
           return next
@@ -291,7 +316,7 @@ export function useGameState(username: string) {
     })
   }, [username])
 
-  // ─── Bonus aura (Frostbite / Techno special drops) ───────────────────────
+  // ─── Bonus aura (Frostbite / Gravitas / Techno special drops) ────────────
   const addBonusAura = useCallback(
     (auraId: string) => {
       setState((prev) => {
@@ -317,6 +342,52 @@ export function useGameState(username: string) {
   const dismissRareNotification = useCallback(() => {
     setState((prev) => {
       const next: GameState = { ...prev, autoRollRareNotification: null }
+      saveState(username, next)
+      return next
+    })
+  }, [username])
+
+  // ─── Biome management ────────────────────────────────────────────────────
+  const activateBiome = useCallback(
+    (biome: BiomeName) => {
+      setState((prev) => {
+        const next: GameState = {
+          ...prev,
+          activeBiome: biome,
+          biomeEndTime: Date.now() + 5 * 60_000,
+        }
+        saveState(username, next)
+        return next
+      })
+    },
+    [username]
+  )
+
+  const deactivateBiome = useCallback(() => {
+    setState((prev) => {
+      const next: GameState = { ...prev, activeBiome: null, biomeEndTime: null }
+      saveState(username, next)
+      return next
+    })
+  }, [username])
+
+  // ─── Blessing Altar ───────────────────────────────────────────────────────
+  const attemptBlessing = useCallback(() => {
+    setState((prev) => {
+      const now = Date.now()
+      if (prev.blessingCooldownEndTime && prev.blessingCooldownEndTime > now) return prev
+
+      const success = Math.random() < 0.5
+      const next: GameState = success
+        ? {
+            ...prev,
+            blessingEndTime: now + 5 * 60_000,
+            blessingCooldownEndTime: now + 10 * 60_000,
+          }
+        : {
+            ...prev,
+            blessingCooldownEndTime: now + 10 * 60_000,
+          }
       saveState(username, next)
       return next
     })
@@ -435,6 +506,9 @@ export function useGameState(username: string) {
     unequipAura,
     addBonusAura,
     dismissRareNotification,
+    activateBiome,
+    deactivateBiome,
+    attemptBlessing,
     setAutoRollEnabled,
     setAutoRollSpeed,
     resetGame,
