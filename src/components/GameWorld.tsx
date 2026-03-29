@@ -49,9 +49,15 @@ export function GameWorld({
   const displayAuraId = equippedAura ?? state.lastRolledAura?.definitionId ?? null
   const displayAura: AuraDefinition | null = displayAuraId ? (AURA_MAP[displayAuraId] ?? null) : null
 
-  const lastAura: AuraDefinition | null = state.lastRolledAura
+  // Show last manual roll; fall back to last auto roll if no manual roll yet
+  const lastManualAura: AuraDefinition | null = state.lastRolledAura
     ? (AURA_MAP[state.lastRolledAura.definitionId] ?? null)
     : null
+  const lastAutoAura: AuraDefinition | null = state.lastAutoRolledAura
+    ? (AURA_MAP[state.lastAutoRolledAura.definitionId] ?? null)
+    : null
+  const lastAura = lastManualAura ?? lastAutoAura
+  const isAutoRollDisplay = !lastManualAura && !!lastAutoAura
 
   const category = lastAura ? getAuraCategory(lastAura.chance) : null
   const categoryColor = category ? (CATEGORY_COLORS[category] ?? '#9ca3af') : '#9ca3af'
@@ -137,7 +143,7 @@ export function GameWorld({
           )}
         </AnimatePresence>
 
-        {/* HUD — top left: current aura */}
+        {/* HUD — top left: last rolled aura (manual or auto) */}
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {lastAura ? (
             <div
@@ -148,6 +154,9 @@ export function GameWorld({
                 color: lastAura.color,
               }}
             >
+              {isAutoRollDisplay && (
+                <span className="opacity-40 mr-1 text-gray-400 font-normal">auto</span>
+              )}
               <span className="opacity-60 mr-1" style={{ color: categoryColor }}>
                 {category}
               </span>
@@ -218,35 +227,12 @@ export function GameWorld({
           </button>
         </div>
 
-        {/* Auto-roll last result ticker */}
-        {(() => {
-          const autoAura = state.lastAutoRolledAura
-            ? (AURA_MAP[state.lastAutoRolledAura.definitionId] ?? null)
-            : null
-          if (!autoAura) return null
-          const cat = getAuraCategory(autoAura.chance)
-          const catColor = CATEGORY_COLORS[cat] ?? '#9ca3af'
-          return (
-            <div
-              className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs"
-              style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.07)' }}
-            >
-              <div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ background: autoAura.color, boxShadow: `0 0 4px ${autoAura.color}` }}
-              />
-              <span style={{ color: catColor }}>{cat}</span>
-              <span className="text-gray-300 font-medium">{autoAura.name}</span>
-            </div>
-          )
-        })()}
-
-        {/* Controls hint — bottom right when auto-rolling */}
+        {/* Controls hint */}
         <div
-          className="absolute bottom-3 right-3 text-xs text-gray-700"
+          className="absolute bottom-3 left-3 text-xs text-gray-600"
           style={{ lineHeight: 1.4 }}
         >
-          WASD move · Space jump
+          WASD / ↑↓←→ move · Space roll/jump
         </div>
       </div>
     </div>
