@@ -31,6 +31,7 @@ function createInitialState(): GameState {
     equippedAura: null,
     activeSpeedPotions: [],
     autoRollRareNotification: null,
+    lastAutoRolledAura: null,
     activeBiome: null,
     biomeEndTime: null,
     blessingCooldownEndTime: null,
@@ -133,6 +134,7 @@ export function useGameState(username: string) {
         totalStats: prev.totalStats + aura.chance,
         totalRolls: prev.totalRolls + 1,
         lastRolledAura: null, // no overlay
+        lastAutoRolledAura: owned,
         activePotions: consumePotionRoll(prev),
         discoveredAuras: prev.discoveredAuras.includes(aura.id)
           ? prev.discoveredAuras

@@ -218,12 +218,35 @@ export function GameWorld({
           </button>
         </div>
 
-        {/* Controls hint — bottom left */}
+        {/* Auto-roll last result ticker */}
+        {(() => {
+          const autoAura = state.lastAutoRolledAura
+            ? (AURA_MAP[state.lastAutoRolledAura.definitionId] ?? null)
+            : null
+          if (!autoAura) return null
+          const cat = getAuraCategory(autoAura.chance)
+          const catColor = CATEGORY_COLORS[cat] ?? '#9ca3af'
+          return (
+            <div
+              className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs"
+              style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.07)' }}
+            >
+              <div
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: autoAura.color, boxShadow: `0 0 4px ${autoAura.color}` }}
+              />
+              <span style={{ color: catColor }}>{cat}</span>
+              <span className="text-gray-300 font-medium">{autoAura.name}</span>
+            </div>
+          )
+        })()}
+
+        {/* Controls hint — bottom right when auto-rolling */}
         <div
-          className="absolute bottom-3 left-3 text-xs text-gray-600"
+          className="absolute bottom-3 right-3 text-xs text-gray-700"
           style={{ lineHeight: 1.4 }}
         >
-          WASD / ↑↓←→ move · Space roll/jump
+          WASD move · Space jump
         </div>
       </div>
     </div>

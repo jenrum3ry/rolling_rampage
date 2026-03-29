@@ -71,6 +71,7 @@ export interface GameState {
   equippedAura: string | null
   activeSpeedPotions: ActiveSpeedPotion[]
   autoRollRareNotification: OwnedAura | null
+  lastAutoRolledAura: OwnedAura | null
   activeBiome: BiomeName | null
   biomeEndTime: number | null
   blessingCooldownEndTime: number | null
