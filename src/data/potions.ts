@@ -9,6 +9,10 @@ export const BEGINNER_POTION: Potion = {
   type: 'luck',
 }
 
+// ─── Shop potions (available in tutorial / future shop) ──────────────────────
+
+// Elixir of Wisdom is already in ALL_POTIONS below; these are the new additions.
+
 // ─── Brewer-only potions (not available in shop, crafted via Brewer tab) ────
 export const LOVE_POTION: Potion = {
   id: 'love-potion',
@@ -26,6 +30,16 @@ export const STARLIGHT_POTION: Potion = {
   luckMultiplier: 1000,
   rollsRemaining: 1,
   type: 'luck',
+}
+
+export const ACCELERATION_POTION: Potion = {
+  id: 'acceleration-potion',
+  name: 'Acceleration Potion',
+  description: 'Simulates 2,500 instant rolls. Keeps only the 10 rarest auras obtained.',
+  luckMultiplier: 1,
+  rollsRemaining: 1,
+  type: 'supersonic',
+  simulatedRolls: 2500,
 }
 
 export const ALL_POTIONS: Potion[] = [
@@ -79,5 +93,35 @@ export const ALL_POTIONS: Potion[] = [
     rollsRemaining: 1,
     type: 'portal',
     simulatedRolls: 1000,
+  },
+  {
+    id: 'elixir-of-wisdom',
+    name: 'Elixir of Wisdom',
+    description: 'Grants 10,000× luck for 1 roll.',
+    luckMultiplier: 10000,
+    rollsRemaining: 1,
+    type: 'luck',
+  },
+  {
+    id: 'potion-of-enragement',
+    name: 'Potion of Enragement',
+    description: 'Multiplies roll speed by 75× for 3 minutes.',
+    luckMultiplier: 1,
+    rollsRemaining: 1,
+    type: 'speed',
+    speedMultiplier: 75,
+    durationMs: 180_000,
+  },
+  {
+    id: 'techno-potion',
+    name: 'Techno Potion',
+    description: '1,000× luck for 1 roll. May bonus-award Paranormal (1 in 100) or Absolute (1 in 2,000).',
+    luckMultiplier: 1000,
+    rollsRemaining: 1,
+    type: 'techno',
+    bonusAuraChances: [
+      { auraId: 'paranormal', chance: 100 },
+      { auraId: 'absolute',   chance: 2000 },
+    ],
   },
 ]

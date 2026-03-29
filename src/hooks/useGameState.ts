@@ -27,6 +27,9 @@ function createInitialState(): GameState {
     autoRollEnabled: false,
     autoRollSpeed: 'slow',
     discoveredAuras: [],
+    equippedAura: null,
+    activeSpeedPotions: [],
+    autoRollRareNotification: null,
   }
 }
 
@@ -35,7 +38,7 @@ function loadState(username: string): GameState {
     const raw = localStorage.getItem(saveStateKey(username))
     if (!raw) return createInitialState()
     const saved = JSON.parse(raw) as Partial<GameState>
-    // Merge with initial state to handle new fields added in v2
+    // Merge with initial state to handle new fields added in later versions
     return { ...createInitialState(), ...saved }
   } catch {
     return createInitialState()
@@ -69,16 +72,36 @@ export function useGameState(username: string) {
         rolledAt: Date.now(),
       }
 
+      let newInventory: OwnedAura[] = [...prev.inventory, owned]
+      let newStats = prev.totalStats + statBonus
+      const newDiscovered = prev.discoveredAuras.includes(aura.id)
+        ? prev.discoveredAuras
+        : [...prev.discoveredAuras, aura.id]
+
+      // Check for active techno potion bonus auras
+      const technoPotion = prev.activePotions.find((p) => p.type === 'techno')
+      if (technoPotion?.bonusAuraChances) {
+        for (const bonus of technoPotion.bonusAuraChances) {
+          if (Math.random() < 1 / bonus.chance) {
+            const bonusDef = AURA_MAP[bonus.auraId]
+            if (bonusDef) {
+              const bonusOwned: OwnedAura = { definitionId: bonus.auraId, rolledAt: Date.now() }
+              newInventory = [...newInventory, bonusOwned]
+              newStats += bonusDef.chance
+              if (!newDiscovered.includes(bonus.auraId)) newDiscovered.push(bonus.auraId)
+            }
+          }
+        }
+      }
+
       const next: GameState = {
         ...prev,
-        inventory: [...prev.inventory, owned],
-        totalStats: prev.totalStats + statBonus,
+        inventory: newInventory,
+        totalStats: newStats,
         totalRolls: prev.totalRolls + 1,
         lastRolledAura: owned,
         activePotions: consumePotionRoll(prev),
-        discoveredAuras: prev.discoveredAuras.includes(aura.id)
-          ? prev.discoveredAuras
-          : [...prev.discoveredAuras, aura.id],
+        discoveredAuras: newDiscovered,
       }
       saveState(username, next)
       return next
@@ -91,6 +114,7 @@ export function useGameState(username: string) {
       const effectiveLuck = getEffectiveLuck(prev)
       const aura = rollAura(effectiveLuck)
       const owned: OwnedAura = { definitionId: aura.id, rolledAt: Date.now() }
+      const isRare = aura.chance >= 10_000
       const next: GameState = {
         ...prev,
         inventory: [...prev.inventory, owned],
@@ -101,6 +125,7 @@ export function useGameState(username: string) {
         discoveredAuras: prev.discoveredAuras.includes(aura.id)
           ? prev.discoveredAuras
           : [...prev.discoveredAuras, aura.id],
+        autoRollRareNotification: isRare ? owned : prev.autoRollRareNotification,
       }
       saveState(username, next)
       return next
@@ -141,7 +166,22 @@ export function useGameState(username: string) {
           return next
         }
 
-        // Luck potion: move to activePotions
+        // Speed potion: record active speed boost with endTime
+        if (potion.type === 'speed') {
+          const endTime = Date.now() + (potion.durationMs ?? 180_000)
+          const next: GameState = {
+            ...prev,
+            potionInventory: prev.potionInventory.filter((p) => p.id !== potionId),
+            activeSpeedPotions: [
+              ...prev.activeSpeedPotions,
+              { endTime, speedMultiplier: potion.speedMultiplier ?? 75 },
+            ],
+          }
+          saveState(username, next)
+          return next
+        }
+
+        // Techno / Luck potion: move to activePotions
         const next: GameState = {
           ...prev,
           potionInventory: prev.potionInventory.filter((p) => p.id !== potionId),
@@ -178,7 +218,6 @@ export function useGameState(username: string) {
         const gauntlet = GAUNTLETS.find((g) => g.id === gauntletId)
         if (!gauntlet) return prev
 
-        // Check requirements
         const counts = prev.inventory.reduce<Record<string, number>>(
           (acc, owned) => {
             acc[owned.definitionId] = (acc[owned.definitionId] ?? 0) + 1
@@ -232,6 +271,57 @@ export function useGameState(username: string) {
     [username]
   )
 
+  // ─── Equippable aura ─────────────────────────────────────────────────────
+  const equipAura = useCallback(
+    (auraId: string) => {
+      setState((prev) => {
+        const next: GameState = { ...prev, equippedAura: auraId }
+        saveState(username, next)
+        return next
+      })
+    },
+    [username]
+  )
+
+  const unequipAura = useCallback(() => {
+    setState((prev) => {
+      const next: GameState = { ...prev, equippedAura: null }
+      saveState(username, next)
+      return next
+    })
+  }, [username])
+
+  // ─── Bonus aura (Frostbite / Techno special drops) ───────────────────────
+  const addBonusAura = useCallback(
+    (auraId: string) => {
+      setState((prev) => {
+        const auraDef = AURA_MAP[auraId]
+        if (!auraDef) return prev
+        const owned: OwnedAura = { definitionId: auraId, rolledAt: Date.now() }
+        const next: GameState = {
+          ...prev,
+          inventory: [...prev.inventory, owned],
+          totalStats: prev.totalStats + auraDef.chance,
+          discoveredAuras: prev.discoveredAuras.includes(auraId)
+            ? prev.discoveredAuras
+            : [...prev.discoveredAuras, auraId],
+        }
+        saveState(username, next)
+        return next
+      })
+    },
+    [username]
+  )
+
+  // ─── Dismiss auto-roll rare notification ─────────────────────────────────
+  const dismissRareNotification = useCallback(() => {
+    setState((prev) => {
+      const next: GameState = { ...prev, autoRollRareNotification: null }
+      saveState(username, next)
+      return next
+    })
+  }, [username])
+
   // ─── Auto-roll ───────────────────────────────────────────────────────────
   const setAutoRollEnabled = useCallback(
     (enabled: boolean) => {
@@ -262,7 +352,6 @@ export function useGameState(username: string) {
         const recipe = BREW_RECIPES.find((r) => r.id === recipeId)
         if (!recipe) return prev
 
-        // Count inventory
         const counts = prev.inventory.reduce<Record<string, number>>(
           (acc, owned) => {
             acc[owned.definitionId] = (acc[owned.definitionId] ?? 0) + 1
@@ -271,13 +360,12 @@ export function useGameState(username: string) {
           {}
         )
 
-        // Check ingredients are available
         const canBrew = recipe.ingredients.every(
           (ing) => (counts[ing.auraId] ?? 0) >= ing.count
         )
         if (!canBrew) return prev
 
-        // Remove ingredient auras from inventory (consume the required amounts)
+        // Remove ingredient auras from inventory
         let newInventory = [...prev.inventory]
         let statLost = 0
         for (const ing of recipe.ingredients) {
@@ -343,6 +431,10 @@ export function useGameState(username: string) {
     craftGauntlet,
     equipGauntlet,
     unequipGauntlet,
+    equipAura,
+    unequipAura,
+    addBonusAura,
+    dismissRareNotification,
     setAutoRollEnabled,
     setAutoRollSpeed,
     resetGame,

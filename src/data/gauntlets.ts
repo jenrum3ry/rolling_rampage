@@ -54,6 +54,20 @@ export const GAUNTLETS: GauntletDef[] = [
     },
   },
   {
+    id: 'gauntlet-of-history',
+    name: 'Gauntlet of History',
+    requiredAuras: [
+      { auraId: 'flame',    count: 1 },
+      { auraId: 'radiance', count: 1 },
+      { auraId: 'bounded',  count: 1 },
+    ],
+    reward: {
+      luckBonus: 150,
+      speedBonus: 2400,
+      description: '+150% luck + 25× roll speed (while equipped)',
+    },
+  },
+  {
     id: 'gauntlet-of-purity',
     name: 'Gauntlet of Purity',
     requiredAuras: [

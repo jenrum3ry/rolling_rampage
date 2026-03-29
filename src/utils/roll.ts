@@ -22,7 +22,7 @@ export function getEffectiveLuck(state: GameState): number {
 }
 
 /**
- * Get effective roll speed multiplier from equipped gauntlets.
+ * Get effective roll speed multiplier from equipped gauntlets and active speed potions.
  * Returns a number > 1 meaning intervals are divided by this.
  */
 export function getEffectiveSpeedMultiplier(state: GameState): number {
@@ -30,7 +30,14 @@ export function getEffectiveSpeedMultiplier(state: GameState): number {
     const g = GAUNTLETS.find((g) => g.id === gId)
     return acc + (g?.reward.speedBonus ?? 0)
   }, 0)
-  return 1 + bonus / 100
+  const gauntletMult = 1 + bonus / 100
+
+  const now = Date.now()
+  const speedPotionMult = (state.activeSpeedPotions ?? [])
+    .filter((p) => p.endTime > now)
+    .reduce((acc, p) => acc * p.speedMultiplier, 1)
+
+  return gauntletMult * speedPotionMult
 }
 
 /**
@@ -79,15 +86,27 @@ export function getAuraCategory(chance: number): string {
   if (chance >= 100_000_000)       return 'Rune'
   if (chance >= 10_000_000)        return 'Exalted'
   if (chance >= 1_000_000)         return 'Charming'
-  if (chance >= 10_000)            return 'Legendary'
-  if (chance >= 1_000)             return 'Mortal'
-  return 'Basics'
+  if (chance >= 250_000)           return 'Celestial'
+  if (chance >= 10_000)            return 'Divine'
+  if (chance >= 5_000)             return 'Exotic'
+  if (chance >= 1_000)             return 'Mythic'
+  if (chance >= 500)               return 'Legendary'
+  if (chance >= 100)               return 'Epic'
+  if (chance >= 10)                return 'Rare'
+  if (chance >= 5)                 return 'Uncommon'
+  return 'Common'
 }
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  Basics:    '#9ca3af',
-  Mortal:    '#4ade80',
-  Legendary: '#fbbf24',
+  Common:    '#6b7280',
+  Uncommon:  '#16a34a',
+  Rare:      '#2563eb',
+  Epic:      '#7c3aed',
+  Legendary: '#d97706',
+  Mythic:    '#dc2626',
+  Exotic:    '#0891b2',
+  Divine:    '#c026d3',
+  Celestial: '#f59e0b',
   Charming:  '#38bdf8',
   Exalted:   '#e879f9',
   Rune:      '#f97316',

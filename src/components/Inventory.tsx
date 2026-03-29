@@ -5,6 +5,9 @@ import { getAuraCategory, CATEGORY_COLORS } from '../utils/roll'
 
 interface Props {
   state: GameState
+  equippedAura: string | null
+  onEquipAura: (auraId: string) => void
+  onUnequipAura: () => void
 }
 
 function formatStat(n: number): string {
@@ -16,7 +19,7 @@ function formatStat(n: number): string {
 // Sort order index (rarest = index 0)
 const RARITY_ORDER = Object.fromEntries(AURAS_DESC.map((a, i) => [a.id, i]))
 
-export function Inventory({ state }: Props) {
+export function Inventory({ state, equippedAura, onEquipAura, onUnequipAura }: Props) {
   // Group owned auras by definition ID and count them
   const grouped = useMemo(() => {
     const map = new Map<string, number>()
@@ -52,13 +55,17 @@ export function Inventory({ state }: Props) {
         {grouped.map(([id, count]) => {
           const aura = AURA_MAP[id]
           if (!aura) return null
+          const isEquipped = equippedAura === id
           return (
             <div
               key={id}
               className="rounded-xl p-3 border text-center"
               style={{
-                borderColor: aura.color + '55',
-                background: `linear-gradient(135deg, rgba(0,0,0,0.5), ${aura.color}12)`,
+                borderColor: isEquipped ? aura.color : aura.color + '55',
+                background: isEquipped
+                  ? `linear-gradient(135deg, ${aura.color}22, ${aura.color}18)`
+                  : `linear-gradient(135deg, rgba(0,0,0,0.5), ${aura.color}12)`,
+                boxShadow: isEquipped ? `0 0 12px ${aura.color}44` : undefined,
               }}
             >
               {/* Color orb */}
@@ -88,6 +95,17 @@ export function Inventory({ state }: Props) {
               <p className="text-xs mt-0.5" style={{ color: aura.color }}>
                 +{formatStat(aura.chance * count)}
               </p>
+              <button
+                onClick={() => isEquipped ? onUnequipAura() : onEquipAura(id)}
+                className="mt-1.5 w-full text-xs rounded-lg py-0.5 font-semibold transition-colors"
+                style={
+                  isEquipped
+                    ? { background: aura.color + '33', color: aura.color, border: `1px solid ${aura.color}88` }
+                    : { background: 'rgba(255,255,255,0.06)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)' }
+                }
+              >
+                {isEquipped ? 'Unequip' : 'Equip'}
+              </button>
             </div>
           )
         })}

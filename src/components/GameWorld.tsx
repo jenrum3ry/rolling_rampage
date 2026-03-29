@@ -1,5 +1,6 @@
-import { useRef } from 'react'
-import type { GameState, AuraDefinition } from '../types'
+import { useRef, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import type { GameState, AuraDefinition, OwnedAura } from '../types'
 import { AURA_MAP } from '../data/auras'
 import { getAuraCategory, CATEGORY_COLORS } from '../utils/roll'
 import { PlayerCharacter } from './PlayerCharacter'
@@ -10,6 +11,9 @@ interface Props {
   onRoll: () => void
   onQuickRoll: () => void
   effectiveLuck: number
+  equippedAura: string | null
+  autoRollRareNotification: OwnedAura | null
+  onDismissRareNotification: () => void
 }
 
 const WORLD_W = 640
@@ -21,9 +25,28 @@ function formatLuck(luck: number): string {
   return `${luck.toFixed(1)}×`
 }
 
-export function GameWorld({ state, onRoll, onQuickRoll, effectiveLuck }: Props) {
+export function GameWorld({
+  state,
+  onRoll,
+  onQuickRoll,
+  effectiveLuck,
+  equippedAura,
+  autoRollRareNotification,
+  onDismissRareNotification,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const { playerState } = usePlayerMovement(WORLD_W, WORLD_H)
+
+  // Auto-dismiss rare notification after 4 seconds
+  useEffect(() => {
+    if (!autoRollRareNotification) return
+    const timer = setTimeout(onDismissRareNotification, 4000)
+    return () => clearTimeout(timer)
+  }, [autoRollRareNotification, onDismissRareNotification])
+
+  // Character display: equipped aura > lastRolledAura
+  const displayAuraId = equippedAura ?? state.lastRolledAura?.definitionId ?? null
+  const displayAura: AuraDefinition | null = displayAuraId ? (AURA_MAP[displayAuraId] ?? null) : null
 
   const lastAura: AuraDefinition | null = state.lastRolledAura
     ? (AURA_MAP[state.lastRolledAura.definitionId] ?? null)
@@ -32,8 +55,15 @@ export function GameWorld({ state, onRoll, onQuickRoll, effectiveLuck }: Props) 
   const category = lastAura ? getAuraCategory(lastAura.chance) : null
   const categoryColor = category ? (CATEGORY_COLORS[category] ?? '#9ca3af') : '#9ca3af'
 
-  const charX = WORLD_W / 2 + playerState.x - 60  // center minus half char width
-  const charY = WORLD_H / 2 + playerState.y - 60  // center minus half char height
+  const charX = WORLD_W / 2 + playerState.x - 60
+  const charY = WORLD_H / 2 + playerState.y - 60
+
+  // Rare notification aura def
+  const rareNotifAura = autoRollRareNotification
+    ? (AURA_MAP[autoRollRareNotification.definitionId] ?? null)
+    : null
+  const rareCategory = rareNotifAura ? getAuraCategory(rareNotifAura.chance) : null
+  const rareCategoryColor = rareCategory ? (CATEGORY_COLORS[rareCategory] ?? '#9ca3af') : '#9ca3af'
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -70,11 +100,41 @@ export function GameWorld({ state, onRoll, onQuickRoll, effectiveLuck }: Props) 
           style={{ left: charX, top: charY }}
         >
           <PlayerCharacter
-            aura={lastAura}
+            aura={displayAura}
             facingLeft={playerState.facingLeft}
             jumping={playerState.jumping}
           />
         </div>
+
+        {/* Rare drop notification banner */}
+        <AnimatePresence>
+          {rareNotifAura && (
+            <motion.div
+              key="rare-notif"
+              initial={{ y: -60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -60, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
+              style={{
+                background: 'rgba(0,0,0,0.85)',
+                border: `1px solid ${rareNotifAura.color}`,
+                boxShadow: `0 0 16px ${rareNotifAura.color}66`,
+                color: rareNotifAura.color,
+                whiteSpace: 'nowrap',
+              }}
+              onClick={onDismissRareNotification}
+            >
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ background: rareNotifAura.color, boxShadow: `0 0 6px ${rareNotifAura.color}` }}
+              />
+              <span style={{ color: rareCategoryColor }}>{rareCategory}</span>
+              <span>{rareNotifAura.name}</span>
+              <span className="opacity-50 ml-1">auto-rolled!</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* HUD — top left: current aura */}
         <div className="absolute top-3 left-3 flex flex-col gap-1">

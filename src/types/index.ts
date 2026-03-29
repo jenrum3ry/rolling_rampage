@@ -16,14 +16,22 @@ export interface OwnedAura {
 
 export type AutoRollSpeed = 'slow' | 'normal' | 'fast' | 'very-fast' | 'ultra'
 
+export interface BonusAuraChance {
+  auraId: string
+  chance: number
+}
+
 export interface Potion {
   id: string
   name: string
   description: string
   luckMultiplier: number
   rollsRemaining: number
-  type: 'luck' | 'portal' | 'supersonic'
+  type: 'luck' | 'portal' | 'supersonic' | 'speed' | 'techno'
   simulatedRolls?: number
+  speedMultiplier?: number
+  durationMs?: number
+  bonusAuraChances?: BonusAuraChance[]
 }
 
 export interface GauntletReward {
@@ -37,6 +45,11 @@ export interface GauntletDef {
   name: string
   requiredAuras: { auraId: string; count: number }[]
   reward: GauntletReward
+}
+
+export interface ActiveSpeedPotion {
+  endTime: number
+  speedMultiplier: number
 }
 
 export interface GameState {
@@ -53,4 +66,7 @@ export interface GameState {
   autoRollEnabled: boolean
   autoRollSpeed: AutoRollSpeed
   discoveredAuras: string[]
+  equippedAura: string | null
+  activeSpeedPotions: ActiveSpeedPotion[]
+  autoRollRareNotification: OwnedAura | null
 }

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { useGameState } from './hooks/useGameState'
 import { useAuth } from './hooks/useAuth'
 import { useAutoRoll } from './hooks/useAutoRoll'
+import { useFrostbiteTimer } from './hooks/useFrostbiteTimer'
 import { LoginScreen } from './components/LoginScreen'
 import { TutorialModal } from './components/TutorialModal'
 import { AuraDisplay } from './components/AuraDisplay'
@@ -29,6 +30,10 @@ function Game({ username }: { username: string }) {
     craftGauntlet,
     equipGauntlet,
     unequipGauntlet,
+    equipAura,
+    unequipAura,
+    addBonusAura,
+    dismissRareNotification,
     setAutoRollEnabled,
     setAutoRollSpeed,
     resetGame,
@@ -36,6 +41,8 @@ function Game({ username }: { username: string }) {
     canCraftGauntlet,
     brewPotion,
   } = useGameState(username)
+
+  useFrostbiteTimer(addBonusAura)
 
   const { logout } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('inventory')
@@ -126,6 +133,9 @@ function Game({ username }: { username: string }) {
           onRoll={handleRoll}
           onQuickRoll={quickRoll}
           effectiveLuck={effectiveLuck}
+          equippedAura={state.equippedAura}
+          autoRollRareNotification={state.autoRollRareNotification}
+          onDismissRareNotification={dismissRareNotification}
         />
 
         {/* Stats */}
@@ -154,7 +164,14 @@ function Game({ username }: { username: string }) {
             ))}
           </div>
 
-          {activeTab === 'inventory' && <Inventory state={state} />}
+          {activeTab === 'inventory' && (
+            <Inventory
+              state={state}
+              equippedAura={state.equippedAura}
+              onEquipAura={equipAura}
+              onUnequipAura={unequipAura}
+            />
+          )}
           {activeTab === 'potions' && (
             <PotionPanel state={state} onUsePotion={usePotion} />
           )}
